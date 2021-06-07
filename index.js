@@ -2,8 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const visit = require('unist-util-visit');
 const EOL = require('os').EOL;
+const escapeRegExp = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-const extractLines = (content, fromLine, hasDash, toLine) => {
+const lineExtractor = (fromLine, hasDash, toLine) => content => {
   if (fromLine === undefined && toLine === undefined) {
     return content;
   }
@@ -11,6 +12,21 @@ const extractLines = (content, fromLine, hasDash, toLine) => {
   toLine = !toLine && hasDash ? lines.length - 1 : toLine || fromLine;
   fromLine = fromLine || 1;
   return lines.slice(fromLine - 1, toLine).join('\n');
+};
+
+const tagExtractor = tag => content => {
+  if (!tag) {
+    return content;
+  }
+  tag = escapeRegExp(tag);
+  const regex = new RegExp(
+    `(?:\\[\\[start:${tag}\\]\\])(?:\\r?\\n|\\r)(?<content>(.|\\r?\\n|\\r)*)(?:\\r?\\n|\\r)(?:.*)(?:\\[\\[end:${tag}\\]\\])`
+  );
+  const result = regex.exec(content);
+  if (!result || !result.groups || !result.groups.content) {
+    throw new Error(`unable to find tag '${tag}' in file`);
+  }
+  return result.groups.content;
 };
 
 function codeImport(options = {}) {
@@ -31,17 +47,23 @@ function codeImport(options = {}) {
         continue;
       }
 
-      const res = /^file=(?<path>.+?)(?:(?:#(?:L(?<from>\d+)(?<dash>-)?)?)(?:L(?<to>\d+))?)?$/.exec(
+      //const res = /^file=(?<path>.+?)(?:(?:#(?:L(?<from>\d+)(?<dash>-)?)?)(?:L(?<to>\d+))?)?$/.exec(
+      const res = /^file=(?<path>.+?)(?:(?:(?:#(?:L(?<from>\d+)(?<dash>-)?)?)(?:L(?<to>\d+))?)?|(?:#\[(?<tag>.*)\]))?$/.exec(
         fileMeta
       );
       if (!res || !res.groups || !res.groups.path) {
         throw new Error(`Unable to parse file path ${fileMeta}`);
       }
       const filePath = res.groups.path;
+
+      const tag = res.groups.tag;
       const hasDash = !!res.groups.dash;
       const fromLine = res.groups.from ? parseInt(res.groups.from) : undefined;
       const toLine = res.groups.to ? parseInt(res.groups.to) : undefined;
       const fileAbsPath = path.resolve(file.dirname, filePath);
+      const extractor = tag
+        ? tagExtractor(tag)
+        : lineExtractor(fromLine, hasDash, toLine);
 
       if (options.async) {
         promises.push(
@@ -52,12 +74,7 @@ function codeImport(options = {}) {
                 return;
               }
 
-              node.value = extractLines(
-                fileContent,
-                fromLine,
-                hasDash,
-                toLine
-              ).trim();
+              node.value = extractor(fileContent).trim();
               resolve();
             });
           })
@@ -65,12 +82,7 @@ function codeImport(options = {}) {
       } else {
         const fileContent = fs.readFileSync(fileAbsPath, 'utf8');
 
-        node.value = extractLines(
-          fileContent,
-          fromLine,
-          hasDash,
-          toLine
-        ).trim();
+        node.value = extractor(fileContent).trim();
       }
     }
 

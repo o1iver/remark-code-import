@@ -22,6 +22,22 @@ test('Basic file import', () => {
     console.log('This is another line...');
     console.log('This is the last line');
     console.log('Oops, here is is another');
+
+    // [[start:myFunction]]
+    function myFunction() {
+      console.log('this just did something cool');
+    }
+    // [[end:myFunction]]
+
+    function mySecondFunction() {}
+
+    // [[start:w@ei#dtag$pacEs]]
+    function myThirdFunction() {
+      console.log('hey there!!');
+    }
+    // [[end:w@ei#dtag$pacEs]]
+
+    console.log('This is actually the last line');
     \`\`\`
     "
   `);
@@ -88,7 +104,85 @@ test('File import using single line number and following lines', () => {
     console.log('This is another line...');
     console.log('This is the last line');
     console.log('Oops, here is is another');
+
+    // [[start:myFunction]]
+    function myFunction() {
+      console.log('this just did something cool');
+    }
+    // [[end:myFunction]]
+
+    function mySecondFunction() {}
+
+    // [[start:w@ei#dtag$pacEs]]
+    function myThirdFunction() {
+      console.log('hey there!!');
+    }
+    // [[end:w@ei#dtag$pacEs]]
+
+    console.log('This is actually the last line');
     \`\`\`
     "
   `);
+});
+
+test('File import using tag', () => {
+  expect(
+    remark()
+      .use(codeImport, {})
+      .processSync({
+        contents: input('#[myFunction]'),
+        path: path.resolve('test.md'),
+      })
+      .toString()
+  ).toMatchInlineSnapshot(`
+    "\`\`\`js file=./__fixtures__/say-#-hi.js#[myFunction]
+    function myFunction() {
+      console.log('this just did something cool');
+    }
+    \`\`\`
+    "
+  `);
+});
+
+test('File import using weird tag', () => {
+  expect(
+    remark()
+      .use(codeImport, {})
+      .processSync({
+        contents: input('#[w@ei#dtag$pacEs]'),
+        path: path.resolve('test.md'),
+      })
+      .toString()
+  ).toMatchInlineSnapshot(`
+    "\`\`\`js file=./__fixtures__/say-#-hi.js#[w@ei#dtag$pacEs]
+    function myThirdFunction() {
+      console.log('hey there!!');
+    }
+    \`\`\`
+    "
+  `);
+});
+
+test('File import using unknown tag', () => {
+  expect(() => {
+    remark()
+      .use(codeImport, {})
+      .processSync({
+        contents: input('#[idontknowwhatthisis]'),
+        path: path.resolve('test.md'),
+      })
+      .toString();
+  }).toThrow();
+});
+
+test('File import using tag with spaces', () => {
+  expect(() => {
+    remark()
+      .use(codeImport, {})
+      .processSync({
+        contents: input('#[tag with spaces]'),
+        path: path.resolve('test.md'),
+      })
+      .toString();
+  }).toThrow();
 });
