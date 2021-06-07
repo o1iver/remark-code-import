@@ -1,14 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 const visit = require('unist-util-visit');
-const EOL = require('os').EOL;
 const escapeRegExp = str => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const lineExtractor = (fromLine, hasDash, toLine) => content => {
   if (fromLine === undefined && toLine === undefined) {
     return content;
   }
-  const lines = content.split(EOL);
+  const lines = content.split(/\r\n|\n/);
   toLine = !toLine && hasDash ? lines.length - 1 : toLine || fromLine;
   fromLine = fromLine || 1;
   return lines.slice(fromLine - 1, toLine).join('\n');
