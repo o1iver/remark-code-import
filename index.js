@@ -17,9 +17,10 @@ const tagExtractor = tag => content => {
   if (!tag) {
     return content;
   }
+  content = content.replace(/\r\n/g,'\n')
   tag = escapeRegExp(tag);
   const regex = new RegExp(
-    `(?:\\[\\[start:${tag}\\]\\])(?:\\r?\\n|\\r)(?<content>(.|\\r?\\n|\\r)*)(?:\\r?\\n|\\r)(?:.*)(?:\\[\\[end:${tag}\\]\\])`
+    `\\[\\[start:${tag}\\]\\]\\n(?<content>(.|\\n)+)(?=\\n.*\\[\\[end:${tag}\\]\\])`
   );
   const result = regex.exec(content);
   if (!result || !result.groups || !result.groups.content) {
