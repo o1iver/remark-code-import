@@ -23,7 +23,7 @@ test('Basic file import', () => {
     console.log('This is the last line');
     console.log('Oops, here is is another');
 
-    // [[start:myFunction]]
+    /** [[start:myFunction]] */
     function myFunction() {
       console.log('this just did something cool');
     }
@@ -105,7 +105,7 @@ test('File import using single line number and following lines', () => {
     console.log('This is the last line');
     console.log('Oops, here is is another');
 
-    // [[start:myFunction]]
+    /** [[start:myFunction]] */
     function myFunction() {
       console.log('this just did something cool');
     }

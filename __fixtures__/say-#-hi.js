@@ -3,7 +3,7 @@ console.log('This is another line...');
 console.log('This is the last line');
 console.log('Oops, here is is another');
 
-// [[start:myFunction]]
+/** [[start:myFunction]] */
 function myFunction() {
   console.log('this just did something cool');
 }
